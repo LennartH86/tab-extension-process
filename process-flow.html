@@ -118,6 +118,7 @@
             transform: translate(-50%, -50%);
             font-size: 14px;
             color: #666;
+            text-align: center;
         }
 
         .error {
@@ -130,6 +131,47 @@
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #f5c6cb;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .configure-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 400px;
+        }
+
+        .configure-prompt h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .configure-prompt p {
+            margin-bottom: 20px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .configure-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .configure-btn:hover {
+            background: #0052a3;
         }
 
         .node-tooltip {
@@ -148,7 +190,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="loading" id="loading">Loading process data...</div>
+        <div class="loading" id="loading">Initializing extension...</div>
+        
+        <div class="configure-prompt" id="configurePrompt" style="display: none;">
+            <h3>🔧 Configuration Required</h3>
+            <p>Please configure the extension to select the worksheet containing your process data.</p>
+            <button class="configure-btn" onclick="openConfigureDialog()">Configure Extension</button>
+        </div>
         
         <div class="toolbar" id="toolbar" style="display: none;">
             <button onclick="resetView()">🏠</button>
@@ -158,6 +206,7 @@
                 <button onclick="zoomIn()">+</button>
             </div>
             <button onclick="refreshData()">🔄</button>
+            <button onclick="openConfigureDialog()">⚙️</button>
         </div>
         
         <svg id="canvas" viewBox="0 0 1000 800" style="display: none;">
@@ -187,35 +236,89 @@
         let panOffset = { x: 0, y: 0 };
         let processData = [];
         let dashboard;
+        let selectedWorksheet = null;
 
         $(document).ready(function() {
-            tableau.extensions.initializeAsync().then(function() {
+            // Initialize with configuration callback
+            tableau.extensions.initializeAsync({ 'configure': configure }).then(function() {
                 dashboard = tableau.extensions.dashboardContent.dashboard;
-                loadProcessData();
+                
+                // Check if extension is already configured
+                const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
+                if (worksheetName) {
+                    selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
+                    if (selectedWorksheet) {
+                        loadProcessData();
+                    } else {
+                        showConfigurePrompt();
+                    }
+                } else {
+                    showConfigurePrompt();
+                }
             }, function(err) {
                 showError('Error initializing extension: ' + err.toString());
             });
         });
 
+        function configure() {
+            openConfigureDialog();
+        }
+
+        function openConfigureDialog() {
+            const popupUrl = `${window.location.origin}/process-flow-config.html`;
+            
+            // Get current settings
+            const currentSettings = {
+                selectedWorksheet: tableau.extensions.settings.get('selectedWorksheet') || '',
+                timestampColumn: tableau.extensions.settings.get('timestampColumn') || '',
+                idColumn: tableau.extensions.settings.get('idColumn') || '',
+                processColumn: tableau.extensions.settings.get('processColumn') || '',
+                statusColumn: tableau.extensions.settings.get('statusColumn') || ''
+            };
+
+            tableau.extensions.ui.displayDialogAsync(popupUrl, JSON.stringify(currentSettings), { 
+                height: 600, 
+                width: 500 
+            }).then((closePayload) => {
+                if (closePayload && closePayload !== 'cancelled') {
+                    // Save settings
+                    tableau.extensions.settings.saveAsync().then(() => {
+                        // Reload data with new configuration
+                        const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
+                        selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
+                        if (selectedWorksheet) {
+                            loadProcessData();
+                        }
+                    });
+                }
+            }).catch((error) => {
+                console.log('Configuration dialog error:', error);
+            });
+        }
+
+        function showConfigurePrompt() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('configurePrompt').style.display = 'block';
+        }
+
         function loadProcessData() {
             try {
-                // Get the worksheet that contains process data
-                const worksheets = dashboard.worksheets;
-                const processWorksheet = worksheets.find(ws => 
-                    ws.name.toLowerCase().includes('process') || 
-                    ws.name.toLowerCase().includes('flow')
-                );
+                document.getElementById('configurePrompt').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').textContent = 'Loading process data...';
 
-                if (!processWorksheet) {
-                    showError('No worksheet found with process data. Please ensure you have a worksheet named with "process" or "flow".');
+                if (!selectedWorksheet) {
+                    showError('No worksheet selected. Please configure the extension.');
                     return;
                 }
 
-                // Get data from the worksheet
-                processWorksheet.getSummaryDataAsync().then(function(dataTable) {
+                // Get data from the selected worksheet
+                selectedWorksheet.getSummaryDataAsync().then(function(dataTable) {
                     parseTableauData(dataTable);
                     renderDiagram();
                     hideLoading();
+                }).catch(function(err) {
+                    showError('Error loading data from worksheet: ' + err.toString());
                 });
 
             } catch(err) {
@@ -227,14 +330,34 @@
             const data = [];
             const columns = dataTable.columns;
             
-            // Find required columns
-            const timestampCol = columns.find(col => col.fieldName.toLowerCase().includes('timestamp'));
-            const idCol = columns.find(col => col.fieldName.toLowerCase().includes('id'));
-            const processCol = columns.find(col => col.fieldName.toLowerCase().includes('process'));
-            const statusCol = columns.find(col => col.fieldName.toLowerCase().includes('status'));
+            // Get column settings from configuration
+            const timestampColName = tableau.extensions.settings.get('timestampColumn');
+            const idColName = tableau.extensions.settings.get('idColumn');
+            const processColName = tableau.extensions.settings.get('processColumn');
+            const statusColName = tableau.extensions.settings.get('statusColumn');
+
+            // Find columns by configured names or fallback to auto-detection
+            const timestampCol = columns.find(col => 
+                col.fieldName === timestampColName || 
+                col.fieldName.toLowerCase().includes('timestamp') ||
+                col.fieldName.toLowerCase().includes('time')
+            );
+            const idCol = columns.find(col => 
+                col.fieldName === idColName || 
+                col.fieldName.toLowerCase().includes('id')
+            );
+            const processCol = columns.find(col => 
+                col.fieldName === processColName || 
+                col.fieldName.toLowerCase().includes('process') ||
+                col.fieldName.toLowerCase().includes('step')
+            );
+            const statusCol = columns.find(col => 
+                col.fieldName === statusColName || 
+                col.fieldName.toLowerCase().includes('status')
+            );
 
             if (!timestampCol || !idCol || !processCol) {
-                showError('Required columns not found. Please ensure your data has: timestamp, id, process, and optionally status columns.');
+                showError('Required columns not found. Please configure the extension with the correct column names.');
                 return;
             }
 
@@ -244,7 +367,7 @@
                     timestamp: row[timestampCol.index].value,
                     id: row[idCol.index].value,
                     process: row[processCol.index].value,
-                    status: statusCol ? row[statusCol.index].value : 'success'
+                    status: statusCol ? (row[statusCol.index].value || 'success') : 'success'
                 };
                 data.push(rowData);
             });
@@ -254,14 +377,27 @@
         }
 
         function analyzeProcessData(data) {
+            // Get unique process names in order of first appearance
+            const processOrder = [];
+            const seenProcesses = new Set();
+            
+            data.forEach(row => {
+                if (!seenProcesses.has(row.process)) {
+                    processOrder.push(row.process);
+                    seenProcesses.add(row.process);
+                }
+            });
+
             const processSteps = {};
-            const processOrder = ['calibrate', 'assembleEngine', 'assembleBack', 'assembleBody', 'ejectCar'];
             
             // Initialize process steps
             processOrder.forEach((step, index) => {
+                const displayName = step.charAt(0).toUpperCase() + 
+                    step.slice(1).replace(/([A-Z])/g, ' $1');
+                
                 processSteps[step] = {
                     id: step,
-                    title: step.charAt(0).toUpperCase() + step.slice(1).replace(/([A-Z])/g, ' $1'),
+                    title: displayName,
                     successCount: 0,
                     failureCount: 0,
                     x: 300,
@@ -270,20 +406,20 @@
                 };
             });
 
-            // Count successes and failures
+            // Count successes and failures by session
             const sessions = {};
             data.forEach(row => {
                 if (!sessions[row.id]) {
                     sessions[row.id] = {};
                 }
-                sessions[row.id][row.process] = row.status || 'success';
+                sessions[row.id][row.process] = row.status;
             });
 
             // Analyze each session
             Object.values(sessions).forEach(session => {
                 processOrder.forEach(step => {
                     if (session[step]) {
-                        if (session[step] === 'failed') {
+                        if (session[step] === 'failed' || session[step] === 'failure') {
                             processSteps[step].failureCount++;
                         } else {
                             processSteps[step].successCount++;
@@ -292,7 +428,7 @@
                 });
             });
 
-            // Create failure nodes
+            // Create array with main steps and failure nodes
             const allSteps = [];
             processOrder.forEach(step => {
                 allSteps.push(processSteps[step]);
@@ -314,7 +450,10 @@
 
         function renderDiagram() {
             const canvas = document.getElementById('canvas');
-            canvas.innerHTML = canvas.querySelector('defs').outerHTML; // Keep defs
+            // Clear previous content but keep defs
+            const defs = canvas.querySelector('defs');
+            canvas.innerHTML = '';
+            canvas.appendChild(defs);
             
             createConnections();
             
@@ -327,28 +466,26 @@
 
         function createConnections() {
             const canvas = document.getElementById('canvas');
-            const processOrder = ['calibrate', 'assembleEngine', 'assembleBack', 'assembleBody', 'ejectCar'];
+            
+            // Get main process steps (excluding failure nodes)
+            const mainSteps = processData.filter(n => !n.id.includes('-failed'));
             
             // Main flow connections
-            for (let i = 0; i < processOrder.length - 1; i++) {
-                const from = processData.find(n => n.id === processOrder[i]);
-                const to = processData.find(n => n.id === processOrder[i + 1]);
-                createConnectionLine(from, to, 'success');
+            for (let i = 0; i < mainSteps.length - 1; i++) {
+                createConnectionLine(mainSteps[i], mainSteps[i + 1], 'success');
             }
 
-            // Failure connections
-            processOrder.forEach((step, index) => {
-                const mainNode = processData.find(n => n.id === step);
-                const failNode = processData.find(n => n.id === step + '-failed');
+            // Failure and continuation connections
+            mainSteps.forEach((step, index) => {
+                const failNode = processData.find(n => n.id === step.id + '-failed');
                 
                 if (failNode) {
                     // Connection to failure
-                    createConnectionLine(mainNode, failNode, 'failure');
+                    createConnectionLine(step, failNode, 'failure');
                     
                     // Continuation to next step if it exists
-                    if (index < processOrder.length - 1) {
-                        const nextStep = processData.find(n => n.id === processOrder[index + 1]);
-                        createConnectionLine(failNode, nextStep, 'continuation');
+                    if (index < mainSteps.length - 1) {
+                        createConnectionLine(failNode, mainSteps[index + 1], 'continuation');
                     }
                 }
             });
@@ -360,13 +497,13 @@
             
             let pathData;
             if (type === 'failure') {
-                pathData = `M ${fromNode.x + 50} ${fromNode.y} L ${toNode.x - 50} ${toNode.y}`;
+                pathData = `M ${fromNode.x + 45} ${fromNode.y} L ${toNode.x - 45} ${toNode.y}`;
             } else if (type === 'continuation') {
                 const midX = (fromNode.x + toNode.x) / 2;
                 const curveY = fromNode.y + 40;
-                pathData = `M ${fromNode.x} ${fromNode.y + 50} Q ${midX} ${curveY} ${toNode.x - 50} ${toNode.y}`;
+                pathData = `M ${fromNode.x} ${fromNode.y + 45} Q ${midX} ${curveY} ${toNode.x - 45} ${toNode.y}`;
             } else {
-                pathData = `M ${fromNode.x} ${fromNode.y + 50} L ${toNode.x} ${toNode.y - 50}`;
+                pathData = `M ${fromNode.x} ${fromNode.y + 45} L ${toNode.x} ${toNode.y - 45}`;
             }
             
             path.setAttribute('d', pathData);
@@ -561,10 +698,9 @@
         }
 
         function refreshData() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('canvas').style.display = 'none';
-            document.getElementById('toolbar').style.display = 'none';
-            loadProcessData();
+            if (selectedWorksheet) {
+                loadProcessData();
+            }
         }
 
         function hideLoading() {
@@ -574,7 +710,15 @@
         }
 
         function showError(message) {
-            document.getElementById('loading').innerHTML = `<div class="error">${message}</div>`;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('configurePrompt').style.display = 'none';
+            document.getElementById('canvas').style.display = 'none';
+            document.getElementById('toolbar').style.display = 'none';
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.innerHTML = `<strong>Error:</strong><br>${message}`;
+            document.querySelector('.container').appendChild(errorDiv);
         }
     </script>
 </body>

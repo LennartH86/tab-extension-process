@@ -7,7 +7,7 @@
     <author name="Your Company" email="support@yourcompany.com" organization="Your Organization" website="https://www.yourcompany.com"/>
     <min-api-version>1.0</min-api-version>
     <source-location>
-      <url>http://localhost:8765/process-flow.html</url>
+      <url>https://lennarth86.github.io/tab-extension-process/process-flow.html</url>
     </source-location>
     <icon>
       iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVDiNpZNLaJNZFMd/9/s+8mjS2jQVCxaKhQrOgKXgQhcOiODCjQsXLly4cOPChQsXLly4cOHChQsXLly4sLhw4cKFCxcuXLhwoYILFy5c+Bg3gjuBCxcuXLhw4cKFCxcu/s8N8rUdH1PFAAAAAElFTkSuQmCC

@@ -1,0 +1,564 @@
+<!-- process-flow-config.html -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Process Flow Extension</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://tableau.github.io/extensions-api/lib/tableau.extensions.1.latest.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+
+        .config-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 450px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        .optional {
+            color: #28a745;
+            font-weight: normal;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .preview-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .preview-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .preview-content {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="config-container">
+        <div class="header">
+            <h2>🔧 Configure Process Flow</h2>
+            <p>Select the worksheet and columns that contain your process data</p>
+        </div>
+
+        <form id="configForm">
+            <div class="form-group">
+                <label class="form-label">
+                    Worksheet <span class="required">*</span>
+                </label>
+                <select id="worksheetSelect" class="form-select" onchange="onWorksheetChange()">
+                    <option value="">Select a worksheet...</option>
+                </select>
+                <div class="form-help">Choose the worksheet containing your process data</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Timestamp Column <span class="required">*</span>
+                </label>
+                <select id="timestampColumn" class="form-select">
+                    <option value="">Select timestamp column...</option>
+                </select>
+                <div class="form-help">Column containing process step timestamps</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    ID Column <span class="required">*</span>
+                </label>
+                <select id="idColumn" class="form-select">
+                    <option value="">Select ID column...</option>
+                </select>
+                <div class="form-help">Column containing unique process/session IDs</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Process Column <span class="required">*</span>
+                </label>
+                <select id="processColumn" class="form-select">
+                    <option value="">Select process column...</option>
+                </select>
+                <div class="form-help">Column containing process step names</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Status Column <span class="optional">(optional)</span>
+                </label>
+                <select id="statusColumn" class="form-select">
+                    <option value="">Select status column...</option>
+                </select>
+                <div class="form-help">Column indicating success/failure status (optional - defaults to success)</div>
+            </div>
+
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <div class="preview-title">📊 Data Preview</div>
+                <div class="preview-content" id="previewContent"></div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="closeDialog()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBtn" onclick="saveConfiguration()" disabled>Save Configuration</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let dashboard;
+        let selectedWorksheet = null;
+        let currentSettings = {};
+
+        $(document).ready(function() {
+            tableau.extensions.initializeDialogAsync().then(function(openPayload) {
+                dashboard = tableau.extensions.dashboardContent.dashboard;
+                
+                // Parse existing settings if any
+                if (openPayload) {
+                    try {
+                        currentSettings = JSON.parse(openPayload);
+                    } catch(e) {
+                        currentSettings = {};
+                    }
+                }
+
+                loadWorksheets();
+                populateCurrentSettings();
+            }).catch(function(err) {
+                showError('Error initializing configuration dialog: ' + err.toString());
+            });
+        });
+
+        function loadWorksheets() {
+            const worksheetSelect = document.getElementById('worksheetSelect');
+            const worksheets = dashboard.worksheets;
+
+            worksheets.forEach(worksheet => {
+                const option = document.createElement('option');
+                option.value = worksheet.name;
+                option.textContent = worksheet.name;
+                worksheetSelect.appendChild(option);
+            });
+
+            // Set current selection if exists
+            if (currentSettings.selectedWorksheet) {
+                worksheetSelect.value = currentSettings.selectedWorksheet;
+                onWorksheetChange();
+            }
+        }
+
+        function onWorksheetChange() {
+            const worksheetName = document.getElementById('worksheetSelect').value;
+            if (!worksheetName) {
+                clearColumnSelects();
+                return;
+            }
+
+            selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
+            if (selectedWorksheet) {
+                loadWorksheetColumns();
+            }
+        }
+
+        function loadWorksheetColumns() {
+            showMessage('Loading worksheet columns...', 'info');
+
+            selectedWorksheet.getSummaryDataAsync({ maxRows: 1 }).then(function(dataTable) {
+                populateColumnSelects(dataTable.columns);
+                hideMessages();
+                validateForm();
+                if (allRequiredFieldsSelected()) {
+                    loadDataPreview();
+                }
+            }).catch(function(err) {
+                showError('Error loading worksheet columns: ' + err.toString());
+            });
+        }
+
+        function populateColumnSelects(columns) {
+            const selects = ['timestampColumn', 'idColumn', 'processColumn', 'statusColumn'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                // Clear existing options except first
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                columns.forEach(column => {
+                    const option = document.createElement('option');
+                    option.value = column.fieldName;
+                    option.textContent = column.fieldName;
+                    select.appendChild(option);
+                });
+
+                // Set current selection if exists
+                if (currentSettings[selectId]) {
+                    select.value = currentSettings[selectId];
+                }
+            });
+
+            // Auto-detect likely columns if no current settings
+            if (!currentSettings.selectedWorksheet) {
+                autoDetectColumns(columns);
+            }
+
+            // Add change listeners
+            selects.forEach(selectId => {
+                document.getElementById(selectId).addEventListener('change', validateForm);
+            });
+        }
+
+        function autoDetectColumns(columns) {
+            // Auto-detect timestamp column
+            const timestampCol = columns.find(col => 
+                col.fieldName.toLowerCase().includes('timestamp') ||
+                col.fieldName.toLowerCase().includes('time') ||
+                col.dataType === 'date-time'
+            );
+            if (timestampCol) {
+                document.getElementById('timestampColumn').value = timestampCol.fieldName;
+            }
+
+            // Auto-detect ID column
+            const idCol = columns.find(col => 
+                col.fieldName.toLowerCase().includes('id') ||
+                col.fieldName.toLowerCase().includes('session')
+            );
+            if (idCol) {
+                document.getElementById('idColumn').value = idCol.fieldName;
+            }
+
+            // Auto-detect process column
+            const processCol = columns.find(col => 
+                col.fieldName.toLowerCase().includes('process') ||
+                col.fieldName.toLowerCase().includes('step') ||
+                col.fieldName.toLowerCase().includes('activity')
+            );
+            if (processCol) {
+                document.getElementById('processColumn').value = processCol.fieldName;
+            }
+
+            // Auto-detect status column
+            const statusCol = columns.find(col => 
+                col.fieldName.toLowerCase().includes('status') ||
+                col.fieldName.toLowerCase().includes('result')
+            );
+            if (statusCol) {
+                document.getElementById('statusColumn').value = statusCol.fieldName;
+            }
+
+            validateForm();
+        }
+
+        function clearColumnSelects() {
+            const selects = ['timestampColumn', 'idColumn', 'processColumn', 'statusColumn'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Select column...</option>';
+            });
+            validateForm();
+        }
+
+        function validateForm() {
+            const required = ['worksheetSelect', 'timestampColumn', 'idColumn', 'processColumn'];
+            const isValid = required.every(id => document.getElementById(id).value !== '');
+            
+            document.getElementById('saveBtn').disabled = !isValid;
+            
+            if (isValid && allRequiredFieldsSelected()) {
+                loadDataPreview();
+            } else {
+                hidePreview();
+            }
+        }
+
+        function allRequiredFieldsSelected() {
+            return document.getElementById('worksheetSelect').value &&
+                   document.getElementById('timestampColumn').value &&
+                   document.getElementById('idColumn').value &&
+                   document.getElementById('processColumn').value;
+        }
+
+        function loadDataPreview() {
+            if (!selectedWorksheet) return;
+
+            selectedWorksheet.getSummaryDataAsync({ maxRows: 100 }).then(function(dataTable) {
+                generatePreview(dataTable);
+            }).catch(function(err) {
+                showError('Error loading data preview: ' + err.toString());
+            });
+        }
+
+        function generatePreview(dataTable) {
+            const columns = dataTable.columns;
+            const timestampColName = document.getElementById('timestampColumn').value;
+            const idColName = document.getElementById('idColumn').value;
+            const processColName = document.getElementById('processColumn').value;
+            const statusColName = document.getElementById('statusColumn').value;
+
+            const timestampCol = columns.find(col => col.fieldName === timestampColName);
+            const idCol = columns.find(col => col.fieldName === idColName);
+            const processCol = columns.find(col => col.fieldName === processColName);
+            const statusCol = statusColName ? columns.find(col => col.fieldName === statusColName) : null;
+
+            if (!timestampCol || !idCol || !processCol) {
+                hidePreview();
+                return;
+            }
+
+            // Analyze data
+            const processSteps = new Set();
+            const sessionCount = new Set();
+            let failureCount = 0;
+
+            dataTable.data.forEach(row => {
+                const processName = row[processCol.index].value;
+                const sessionId = row[idCol.index].value;
+                const status = statusCol ? row[statusCol.index].value : 'success';
+
+                processSteps.add(processName);
+                sessionCount.add(sessionId);
+                
+                if (status === 'failed' || status === 'failure') {
+                    failureCount++;
+                }
+            });
+
+            // Show preview
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <strong>📈 Data Summary:</strong><br>
+                • Process Steps: ${processSteps.size} unique steps<br>
+                • Sessions: ${sessionCount.size} unique process runs<br>
+                • Total Records: ${dataTable.data.length}<br>
+                • Failures: ${failureCount} records<br><br>
+                <strong>🔄 Process Steps Found:</strong><br>
+                ${Array.from(processSteps).join(', ')}
+            `;
+            
+            document.getElementById('previewSection').style.display = 'block';
+        }
+
+        function populateCurrentSettings() {
+            if (currentSettings.selectedWorksheet) {
+                document.getElementById('worksheetSelect').value = currentSettings.selectedWorksheet;
+            }
+            if (currentSettings.timestampColumn) {
+                document.getElementById('timestampColumn').value = currentSettings.timestampColumn;
+            }
+            if (currentSettings.idColumn) {
+                document.getElementById('idColumn').value = currentSettings.idColumn;
+            }
+            if (currentSettings.processColumn) {
+                document.getElementById('processColumn').value = currentSettings.processColumn;
+            }
+            if (currentSettings.statusColumn) {
+                document.getElementById('statusColumn').value = currentSettings.statusColumn;
+            }
+        }
+
+        function saveConfiguration() {
+            const worksheetName = document.getElementById('worksheetSelect').value;
+            const timestampColumn = document.getElementById('timestampColumn').value;
+            const idColumn = document.getElementById('idColumn').value;
+            const processColumn = document.getElementById('processColumn').value;
+            const statusColumn = document.getElementById('statusColumn').value;
+
+            if (!worksheetName || !timestampColumn || !idColumn || !processColumn) {
+                showError('Please fill in all required fields.');
+                return;
+            }
+
+            // Save settings
+            tableau.extensions.settings.set('selectedWorksheet', worksheetName);
+            tableau.extensions.settings.set('timestampColumn', timestampColumn);
+            tableau.extensions.settings.set('idColumn', idColumn);
+            tableau.extensions.settings.set('processColumn', processColumn);
+            tableau.extensions.settings.set('statusColumn', statusColumn);
+
+            tableau.extensions.settings.saveAsync().then(() => {
+                showSuccess('Configuration saved successfully!');
+                setTimeout(() => {
+                    tableau.extensions.ui.closeDialog('configured');
+                }, 1000);
+            }).catch((err) => {
+                showError('Error saving configuration: ' + err.toString());
+            });
+        }
+
+        function closeDialog() {
+            tableau.extensions.ui.closeDialog('cancelled');
+        }
+
+        function hidePreview() {
+            document.getElementById('previewSection').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function showMessage(message, type) {
+            if (type === 'info') {
+                document.getElementById('previewContent').innerHTML = `<em>${message}</em>`;
+                document.getElementById('previewSection').style.display = 'block';
+            }
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
