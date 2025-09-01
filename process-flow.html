@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Flow Extension</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://tableau.github.io/extensions-api/lib/tableau.extensions.1.latest.js"></script>
+    <script src="../../lib/tableau.extensions.1.latest.js"></script>
     <style>
         * {
             margin: 0;
@@ -239,23 +239,38 @@
         let selectedWorksheet = null;
 
         $(document).ready(function() {
+            console.log('Document ready, initializing extension...');
+            
+            // Check if tableau object exists
+            if (typeof tableau === 'undefined') {
+                showError('Tableau Extensions API not loaded. Please ensure you are running this from within Tableau.');
+                return;
+            }
+
             // Initialize with configuration callback
             tableau.extensions.initializeAsync({ 'configure': configure }).then(function() {
+                console.log('Extension initialized successfully');
                 dashboard = tableau.extensions.dashboardContent.dashboard;
                 
                 // Check if extension is already configured
                 const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
+                console.log('Saved worksheet name:', worksheetName);
+                
                 if (worksheetName) {
                     selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
                     if (selectedWorksheet) {
+                        console.log('Found worksheet, loading data...');
                         loadProcessData();
                     } else {
+                        console.log('Worksheet not found, showing configure prompt');
                         showConfigurePrompt();
                     }
                 } else {
+                    console.log('No worksheet configured, showing configure prompt');
                     showConfigurePrompt();
                 }
             }, function(err) {
+                console.error('Initialization error:', err);
                 showError('Error initializing extension: ' + err.toString());
             });
         });
@@ -265,7 +280,9 @@
         }
 
         function openConfigureDialog() {
+            console.log('Opening configuration dialog...');
             const popupUrl = `${window.location.origin}/process-flow-config.html`;
+            console.log('Dialog URL:', popupUrl);
             
             // Get current settings
             const currentSettings = {
@@ -276,14 +293,17 @@
                 statusColumn: tableau.extensions.settings.get('statusColumn') || ''
             };
 
+            console.log('Current settings:', currentSettings);
+
             tableau.extensions.ui.displayDialogAsync(popupUrl, JSON.stringify(currentSettings), { 
                 height: 600, 
                 width: 500 
             }).then((closePayload) => {
+                console.log('Dialog closed with payload:', closePayload);
                 if (closePayload && closePayload !== 'cancelled') {
-                    // Save settings
+                    // Save settings and reload data
                     tableau.extensions.settings.saveAsync().then(() => {
-                        // Reload data with new configuration
+                        console.log('Settings saved, reloading data...');
                         const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
                         selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
                         if (selectedWorksheet) {
@@ -292,7 +312,8 @@
                     });
                 }
             }).catch((error) => {
-                console.log('Configuration dialog error:', error);
+                console.error('Configuration dialog error:', error);
+                showError('Error opening configuration dialog: ' + error.toString());
             });
         }
 
