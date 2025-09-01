@@ -1,16 +1,54 @@
 {
-  "name": "annotation-extension",
+  "name": "tab-extension-process",
   "version": "1.0.0",
-  "description": "Tableau Dashboard Extension Sample",
-  "main": "server.js",
+  "description": "Sample code and documentation for the Tableau Extensions API.",
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm install && npm run lint && webpack --config webpack.config.js",
+    "start": "node node_modules/http-server/bin/http-server -p 8765 -c-1",
+    "lint": "npm run jslint",
+    "jslint": "semistandard ./Samples/*/*/*.js",
+    "dev": "concurrently --kill-others \"webpack --watch\" \"npm:start\"",
+    "test": "jest",
+    "test-watch": "jest --watch",
+    "test-coverage": "jest --coverage"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LennartH86/tab-extension-process.git"
+  },
+  "author": "lheuckendorf",
   "dependencies": {
-    "express": "^4.19.2"
+    "http-server": "^14.1.0"
+  },
+  "devDependencies": {
+    "@tableau/extensions-api-types": "1.14.0",
+    "@tableau/tabextsandbox": "1.14.0",
+    "@tableau/tableau-ui": "3.10",
+    "@testing-library/jest-dom": "^5.11.0",
+    "@testing-library/react": "^11.1.0",
+    "@types/jest": "^27.0.2",
+    "@types/jquery": "^3.3.29",
+    "@types/react": "^16.8.6",
+    "@types/react-dom": "^16.8.5",
+    "concurrently": "^6.2.1",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "semistandard": "^16.0.1",
+    "webpack": "^5.90.1",
+    "webpack-cli": "4"
+  },
+  "semistandard": {
+    "env": {
+      "jquery": true,
+      "browser": true
+    },
+    "globals": [
+      "tableau"
+    ],
+    "ignore": [
+      "/lib",
+      "/docs",
+      "tableau.extensions.*.latest.js"
+    ]
   }
 }
