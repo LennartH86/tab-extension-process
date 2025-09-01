@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
+  <dashboard-extension id="com.example.processflow" extension-version="0.1.0">
+    <default-locale>en_US</default-locale>
+    <name resource-id="name"/>
+    <description resource-id="description"/>
+    <author name="Your Company" email="support@yourcompany.com" organization="Your Organization" website="https://www.yourcompany.com"/>
+    <min-api-version>1.0</min-api-version>
+    <source-location>
+      <url>http://localhost:8765/process-flow.html</url>
+    </source-location>
+    <icon>
+      iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVDiNpZNLaJNZFMd/9/s+8mjS2jQVCxaKhQrOgKXgQhcOiODCjQsXLly4cOPChQsXLly4cOHChQsXLly4sLhw4cKFCxcuXLhwoYILFy5c+Bg3gjuBCxcuXLhw4cKFCxcu/s8N8rUdH1PFAAAAAElFTkSuQmCC
+    </icon>
+    <permissions>
+      <permission>full data</permission>
+    </permissions>
+    <context-menu>
+      <configure-context-menu-item />
+    </context-menu>
+  </dashboard-extension>
+  <resources>
+    <resource id="name">
+      <text locale="en_US">Process Flow Diagram</text>
+      <text locale="de_DE">Prozessfluss-Diagramm</text>
+    </resource>
+    <resource id="description">
+      <text locale="en_US">Visualizes process flow with success and failure paths</text>
+      <text locale="de_DE">Visualisiert Prozessabläufe mit Erfolgs- und Fehlerpfaden</text>
+    </resource>
+  </resources>
+</manifest>
