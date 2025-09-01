@@ -18,7 +18,14 @@
   },
   "author": "lheuckendorf",
   "dependencies": {
-    "http-server": "^14.1.0"
+    "http-server": "^14.1.0",
+    "semistandard": "^16.0.1",
+    "@tableau/extensions-api-types": "1.14.0",
+    "@tableau/tableau-ui": "3.10",
+    "@types/jquery": "^3.3.29",
+    "concurrently": "^6.2.1",
+    "webpack": "^5.90.1",
+    "webpack-cli": "4"
   },
   "devDependencies": {
     "@tableau/extensions-api-types": "1.14.0",
