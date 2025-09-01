@@ -2,6 +2,9 @@
   "name": "tab-extension-process",
   "version": "1.0.0",
   "description": "Sample code and documentation for the Tableau Extensions API.",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "build": "npm install && npm run lint && webpack --config webpack.config.js",
     "start": "node node_modules/http-server/bin/http-server -p 8765 -c-1",
