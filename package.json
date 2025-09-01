@@ -9,7 +9,6 @@
     "build": "npm install && npm run lint && webpack --config webpack.config.js",
     "start": "node node_modules/http-server/bin/http-server -p 8765 -c-1",
     "lint": "npm run jslint",
-    //"jslint": "semistandard ./*.js",
     "dev": "concurrently --kill-others \"webpack --watch\" \"npm:start\"",
     "test": "jest",
     "test-watch": "jest --watch",
