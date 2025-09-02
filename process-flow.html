@@ -15,58 +15,77 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
             width: 100%;
             height: 100vh;
             position: relative;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
         }
 
         .toolbar {
             position: absolute;
-            top: 10px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
-            background: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             z-index: 1000;
         }
 
         .toolbar button {
             background: none;
             border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
         }
 
         .toolbar button:hover {
-            background: #f8f9fa;
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            transform: translateY(-1px);
         }
 
         .zoom-controls {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            background: rgba(243, 244, 246, 0.8);
+            border-radius: 20px;
+            padding: 4px;
         }
 
         .zoom-level {
-            min-width: 50px;
+            min-width: 60px;
             text-align: center;
-            font-size: 11px;
-            color: #666;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            padding: 4px 8px;
         }
 
         #canvas {
@@ -90,24 +109,25 @@
 
         .connection-line {
             fill: none;
-            stroke-width: 2;
-            transition: stroke-width 0.3s ease;
+            stroke-width: 3;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         .connection-line.success {
-            stroke: #28a745;
+            stroke: #10b981;
             marker-end: url(#arrowhead-success);
         }
 
         .connection-line.failure {
-            stroke: #dc3545;
-            stroke-dasharray: 8,4;
+            stroke: #ef4444;
+            stroke-dasharray: 12,6;
             marker-end: url(#arrowhead-failure);
         }
 
         .connection-line.continuation {
-            stroke: #ffc107;
-            stroke-dasharray: 4,4;
+            stroke: #f59e0b;
+            stroke-dasharray: 8,4;
             marker-end: url(#arrowhead-continuation);
         }
 
@@ -116,8 +136,9 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 14px;
-            color: #666;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6b7280;
             text-align: center;
         }
 
@@ -126,13 +147,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #f5c6cb;
+            background: rgba(254, 226, 226, 0.95);
+            color: #dc2626;
+            padding: 24px 32px;
+            border-radius: 16px;
+            border: 1px solid #fca5a5;
             max-width: 400px;
             text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         .configure-prompt {
@@ -141,50 +164,62 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             max-width: 400px;
         }
 
         .configure-prompt h3 {
-            margin-bottom: 15px;
-            color: #333;
+            margin-bottom: 16px;
+            color: #111827;
+            font-size: 20px;
+            font-weight: 600;
         }
 
         .configure-prompt p {
-            margin-bottom: 20px;
-            color: #666;
-            line-height: 1.5;
+            margin-bottom: 24px;
+            color: #6b7280;
+            line-height: 1.6;
+            font-size: 14px;
         }
 
         .configure-btn {
-            background: #0066cc;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 14px 28px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            transition: background 0.2s;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
 
         .configure-btn:hover {
-            background: #0052a3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
         }
 
         .node-tooltip {
             position: absolute;
-            background: rgba(0,0,0,0.9);
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
             color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 11px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
             pointer-events: none;
             z-index: 2000;
             display: none;
             max-width: 200px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
@@ -211,18 +246,44 @@
         
         <svg id="canvas" viewBox="0 0 1000 800" style="display: none;">
             <defs>
-                <marker id="arrowhead-success" markerWidth="10" markerHeight="7" 
-                        refX="9" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#28a745" />
+                <marker id="arrowhead-success" markerWidth="12" markerHeight="8" 
+                        refX="11" refY="4" orient="auto">
+                    <polygon points="0 0, 12 4, 0 8" fill="#10b981" />
                 </marker>
-                <marker id="arrowhead-failure" markerWidth="10" markerHeight="7" 
-                        refX="9" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#dc3545" />
+                <marker id="arrowhead-failure" markerWidth="12" markerHeight="8" 
+                        refX="11" refY="4" orient="auto">
+                    <polygon points="0 0, 12 4, 0 8" fill="#ef4444" />
                 </marker>
-                <marker id="arrowhead-continuation" markerWidth="10" markerHeight="7" 
-                        refX="9" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#ffc107" />
+                <marker id="arrowhead-continuation" markerWidth="12" markerHeight="8" 
+                        refX="11" refY="4" orient="auto">
+                    <polygon points="0 0, 12 4, 0 8" fill="#f59e0b" />
                 </marker>
+                
+                <!-- Gradient definitions for modern nodes -->
+                <linearGradient id="startGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+                </linearGradient>
+                
+                <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+                </linearGradient>
+                
+                <linearGradient id="failureGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+                </linearGradient>
+                
+                <linearGradient id="normalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:1" />
+                </linearGradient>
+                
+                <!-- Drop shadow filter -->
+                <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.15"/>
+                </filter>
             </defs>
         </svg>
         
@@ -560,15 +621,12 @@
                     // Connection to failure
                     createConnectionLine(step, failNode, 'failure');
                     
-                    // Continuation to next step if it exists
+                    // Continuation to next step if it exists (but not from last step to success)
                     if (index < mainSteps.length - 1) {
                         createConnectionLine(failNode, mainSteps[index + 1], 'continuation', failNode.failureCount);
-                    } else {
-                        // If it's the last step, continue to success node
-                        if (successNode) {
-                            createConnectionLine(failNode, successNode, 'continuation', failNode.failureCount);
-                        }
                     }
+                    // Note: No continuation from last failed step to success node
+                    // because success node is only for fully successful runs
                 }
             });
         }
