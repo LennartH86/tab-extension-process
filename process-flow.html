@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Flow Extension</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="../../lib/tableau.extensions.1.latest.js"></script>
+    <script src="./lib/tableau.extensions.1.latest.js"></script>
     <style>
         * {
             margin: 0;
@@ -337,7 +337,7 @@
         function openConfigureDialog() {
             console.log('Opening configuration dialog...');
             // Use the same origin as the main extension, not window.location.origin
-            const popupUrl = `http://localhost:8765/process-flow-config.html`;
+            const popupUrl = `https://lennarth86.github.io/tab-extension-process/process-flowc-config.html`;
             console.log('Dialog URL:', popupUrl);
             
             // Get current settings
