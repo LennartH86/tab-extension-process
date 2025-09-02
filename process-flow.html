@@ -281,6 +281,7 @@
 
         function openConfigureDialog() {
             console.log('Opening configuration dialog...');
+            // Use the same origin as the main extension, not window.location.origin
             const popupUrl = `https://lennarth86.github.io/tab-extension-process/process-flow-config.html`;
             console.log('Dialog URL:', popupUrl);
             
@@ -411,7 +412,32 @@
 
             const processSteps = {};
             
-            // Initialize process steps
+            // Analyze sessions first to get total runs and successful runs
+            const sessions = {};
+            data.forEach(row => {
+                if (!sessions[row.id]) {
+                    sessions[row.id] = {};
+                }
+                sessions[row.id][row.process] = row.status;
+            });
+
+            // Count total runs and fully successful runs
+            const totalRuns = Object.keys(sessions).length;
+            let fullySuccessfulRuns = 0;
+
+            Object.values(sessions).forEach(session => {
+                let hasAnyFailure = false;
+                processOrder.forEach(step => {
+                    if (session[step] && (session[step] === 'failed' || session[step] === 'failure')) {
+                        hasAnyFailure = true;
+                    }
+                });
+                if (!hasAnyFailure) {
+                    fullySuccessfulRuns++;
+                }
+            });
+            
+            // Initialize process steps - all get the same 'normal' type now
             processOrder.forEach((step, index) => {
                 const displayName = step.charAt(0).toUpperCase() + 
                     step.slice(1).replace(/([A-Z])/g, ' $1');
@@ -422,21 +448,12 @@
                     successCount: 0,
                     failureCount: 0,
                     x: 300,
-                    y: 150 + (index * 130),
-                    type: index === 0 ? 'start' : (index === processOrder.length - 1 ? 'end' : 'normal')
+                    y: 200 + (index * 130), // Moved down to make room for start element
+                    type: 'normal' // All process steps get same color
                 };
             });
 
             // Count successes and failures by session
-            const sessions = {};
-            data.forEach(row => {
-                if (!sessions[row.id]) {
-                    sessions[row.id] = {};
-                }
-                sessions[row.id][row.process] = row.status;
-            });
-
-            // Analyze each session
             Object.values(sessions).forEach(session => {
                 processOrder.forEach(step => {
                     if (session[step]) {
@@ -449,8 +466,21 @@
                 });
             });
 
-            // Create array with main steps and failure nodes
+            // Create array with start element, main steps, failure nodes, and success element
             const allSteps = [];
+            
+            // Add start element
+            allSteps.push({
+                id: 'start',
+                title: 'Process Start',
+                successCount: totalRuns,
+                failureCount: 0,
+                x: 300,
+                y: 70,
+                type: 'start'
+            });
+
+            // Add main process steps and their failure nodes
             processOrder.forEach(step => {
                 allSteps.push(processSteps[step]);
                 if (processSteps[step].failureCount > 0) {
@@ -464,6 +494,18 @@
                         type: 'failure'
                     });
                 }
+            });
+
+            // Add success element at the end
+            const lastY = processOrder.length > 0 ? 200 + ((processOrder.length - 1) * 130) + 130 : 330;
+            allSteps.push({
+                id: 'success',
+                title: 'Process Success',
+                successCount: fullySuccessfulRuns,
+                failureCount: 0,
+                x: 300,
+                y: lastY,
+                type: 'end'
             });
 
             return allSteps;
@@ -488,12 +530,26 @@
         function createConnections() {
             const canvas = document.getElementById('canvas');
             
-            // Get main process steps (excluding failure nodes)
-            const mainSteps = processData.filter(n => !n.id.includes('-failed'));
+            // Get main process steps (excluding failure nodes, start, and success)
+            const mainSteps = processData.filter(n => 
+                !n.id.includes('-failed') && n.id !== 'start' && n.id !== 'success'
+            );
+            const startNode = processData.find(n => n.id === 'start');
+            const successNode = processData.find(n => n.id === 'success');
             
-            // Main flow connections
+            // Connection from start to first main step
+            if (startNode && mainSteps.length > 0) {
+                createConnectionLine(startNode, mainSteps[0], 'success');
+            }
+            
+            // Main flow connections between process steps
             for (let i = 0; i < mainSteps.length - 1; i++) {
                 createConnectionLine(mainSteps[i], mainSteps[i + 1], 'success');
+            }
+            
+            // Connection from last main step to success
+            if (mainSteps.length > 0 && successNode) {
+                createConnectionLine(mainSteps[mainSteps.length - 1], successNode, 'success');
             }
 
             // Failure and continuation connections
@@ -506,13 +562,18 @@
                     
                     // Continuation to next step if it exists
                     if (index < mainSteps.length - 1) {
-                        createConnectionLine(failNode, mainSteps[index + 1], 'continuation');
+                        createConnectionLine(failNode, mainSteps[index + 1], 'continuation', failNode.failureCount);
+                    } else {
+                        // If it's the last step, continue to success node
+                        if (successNode) {
+                            createConnectionLine(failNode, successNode, 'continuation', failNode.failureCount);
+                        }
                     }
                 }
             });
         }
 
-        function createConnectionLine(fromNode, toNode, type) {
+        function createConnectionLine(fromNode, toNode, type, count = null) {
             const canvas = document.getElementById('canvas');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             
@@ -523,6 +584,33 @@
                 const midX = (fromNode.x + toNode.x) / 2;
                 const curveY = fromNode.y + 40;
                 pathData = `M ${fromNode.x} ${fromNode.y + 45} Q ${midX} ${curveY} ${toNode.x - 45} ${toNode.y}`;
+                
+                // Add count label for continuation lines
+                if (count && count > 0) {
+                    const labelX = midX;
+                    const labelY = curveY;
+                    
+                    const countLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    countLabel.setAttribute('x', labelX);
+                    countLabel.setAttribute('y', labelY);
+                    countLabel.setAttribute('text-anchor', 'middle');
+                    countLabel.setAttribute('font-size', '10');
+                    countLabel.setAttribute('font-weight', '600');
+                    countLabel.setAttribute('fill', '#ffc107');
+                    countLabel.textContent = count.toString();
+                    
+                    // Add background circle for better readability
+                    const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    labelBg.setAttribute('cx', labelX);
+                    labelBg.setAttribute('cy', labelY - 3);
+                    labelBg.setAttribute('r', '12');
+                    labelBg.setAttribute('fill', 'white');
+                    labelBg.setAttribute('stroke', '#ffc107');
+                    labelBg.setAttribute('stroke-width', '2');
+                    
+                    canvas.appendChild(labelBg);
+                    canvas.appendChild(countLabel);
+                }
             } else {
                 pathData = `M ${fromNode.x} ${fromNode.y + 45} L ${toNode.x} ${toNode.y - 45}`;
             }
@@ -557,17 +645,13 @@
                     strokeColor = '#dc3545';
                     break;
                 case 'end':
-                    fillColor = node.failureCount > 0 ? '#fff3cd' : '#d4edda';
-                    strokeColor = node.failureCount > 0 ? '#ffc107' : '#28a745';
+                    fillColor = '#28a745';
+                    strokeColor = '#28a745';
                     break;
                 case 'normal':
-                    if (node.failureCount > 0) {
-                        fillColor = '#f8d7da';
-                        strokeColor = '#dc3545';
-                    } else {
-                        fillColor = 'white';
-                        strokeColor = '#28a745';
-                    }
+                    // All process steps get the same blue color
+                    fillColor = 'white';
+                    strokeColor = '#007bff';
                     break;
             }
             
