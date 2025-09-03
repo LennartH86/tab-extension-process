@@ -121,18 +121,18 @@
         }
 
         .connection-line.success {
-            stroke: #007AFF;
+            stroke: #4a6b7c;
             marker-end: url(#arrowhead-success);
         }
 
         .connection-line.failure {
-            stroke: #FF3B30;
+            stroke: #b85a73;
             stroke-dasharray: 6,4;
             marker-end: url(#arrowhead-failure);
         }
 
         .connection-line.continuation {
-            stroke: #FF9500;
+            stroke: #d4935a;
             stroke-dasharray: 4,3;
             marker-end: url(#arrowhead-continuation);
         }
@@ -196,7 +196,7 @@
         }
 
         .configure-btn {
-            background: #007AFF;
+            background: #4a6b7c;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -209,7 +209,7 @@
         }
 
         .configure-btn:hover {
-            background: #0056CC;
+            background: #3d5a6a;
             transform: translateY(-1px);
         }
 
@@ -242,7 +242,7 @@
         <div class="loading" id="loading">Initializing extension...</div>
         
         <div class="configure-prompt" id="configurePrompt" style="display: none;">
-            <h3>🔧 Configuration Required</h3>
+            <h3>Configuration Required</h3>
             <p>Please configure the extension to select the worksheet containing your process data.</p>
             <button class="configure-btn" onclick="openConfigureDialog()">Configure Extension</button>
         </div>
@@ -260,21 +260,18 @@
         
         <svg id="canvas" viewBox="0 0 1000 800" style="display: none;">
             <defs>
-                <!-- Apple-style arrows -->
                 <marker id="arrowhead-success" markerWidth="8" markerHeight="8" 
                         refX="7" refY="4" orient="auto">
-                    <path d="M 0 0 L 8 4 L 0 8 z" fill="#007AFF"/>
+                    <path d="M 0 0 L 8 4 L 0 8 z" fill="#4a6b7c"/>
                 </marker>
                 <marker id="arrowhead-failure" markerWidth="8" markerHeight="8" 
                         refX="7" refY="4" orient="auto">
-                    <path d="M 0 0 L 8 4 L 0 8 z" fill="#FF3B30"/>
+                    <path d="M 0 0 L 8 4 L 0 8 z" fill="#b85a73"/>
                 </marker>
                 <marker id="arrowhead-continuation" markerWidth="8" markerHeight="8" 
                         refX="7" refY="4" orient="auto">
-                    <path d="M 0 0 L 8 4 L 0 8 z" fill="#FF9500"/>
+                    <path d="M 0 0 L 8 4 L 0 8 z" fill="#d4935a"/>
                 </marker>
-                
-                <!-- Subtle shadow filter -->
                 <filter id="subtleShadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/>
                 </filter>
@@ -296,18 +293,15 @@
         $(document).ready(function() {
             console.log('Document ready, initializing extension...');
             
-            // Check if tableau object exists
             if (typeof tableau === 'undefined') {
                 showError('Tableau Extensions API not loaded. Please ensure you are running this from within Tableau.');
                 return;
             }
 
-            // Initialize with configuration callback
             tableau.extensions.initializeAsync({ 'configure': configure }).then(function() {
                 console.log('Extension initialized successfully');
                 dashboard = tableau.extensions.dashboardContent.dashboard;
                 
-                // Check if extension is already configured
                 const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
                 console.log('Saved worksheet name:', worksheetName);
                 
@@ -336,11 +330,9 @@
 
         function openConfigureDialog() {
             console.log('Opening configuration dialog...');
-            // Use the same origin as the main extension, not window.location.origin
-            const popupUrl = `https://lennarth86.github.io/tab-extension-process/process-flow-config.html`;
+            const popupUrl = 'https://lennarth86.github.io/tab-extension-process/process-flow-config.html';
             console.log('Dialog URL:', popupUrl);
             
-            // Get current settings
             const currentSettings = {
                 selectedWorksheet: tableau.extensions.settings.get('selectedWorksheet') || '',
                 timestampColumn: tableau.extensions.settings.get('timestampColumn') || '',
@@ -357,7 +349,6 @@
             }).then((closePayload) => {
                 console.log('Dialog closed with payload:', closePayload);
                 if (closePayload && closePayload !== 'cancelled') {
-                    // Save settings and reload data
                     tableau.extensions.settings.saveAsync().then(() => {
                         console.log('Settings saved, reloading data...');
                         const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
@@ -389,7 +380,6 @@
                     return;
                 }
 
-                // Get data from the selected worksheet
                 selectedWorksheet.getSummaryDataAsync().then(function(dataTable) {
                     parseTableauData(dataTable);
                     renderDiagram();
@@ -407,13 +397,11 @@
             const data = [];
             const columns = dataTable.columns;
             
-            // Get column settings from configuration
             const timestampColName = tableau.extensions.settings.get('timestampColumn');
             const idColName = tableau.extensions.settings.get('idColumn');
             const processColName = tableau.extensions.settings.get('processColumn');
             const statusColName = tableau.extensions.settings.get('statusColumn');
 
-            // Find columns by configured names or fallback to auto-detection
             const timestampCol = columns.find(col => 
                 col.fieldName === timestampColName || 
                 col.fieldName.toLowerCase().includes('timestamp') ||
@@ -438,7 +426,6 @@
                 return;
             }
 
-            // Parse data
             dataTable.data.forEach(row => {
                 const rowData = {
                     timestamp: row[timestampCol.index].value,
@@ -449,12 +436,10 @@
                 data.push(rowData);
             });
 
-            // Process the data to create process steps
             processData = analyzeProcessData(data);
         }
 
         function analyzeProcessData(data) {
-            // Get unique process names in order of first appearance
             const processOrder = [];
             const seenProcesses = new Set();
             
@@ -467,7 +452,6 @@
 
             const processSteps = {};
             
-            // Analyze sessions first to get total runs and successful runs
             const sessions = {};
             data.forEach(row => {
                 if (!sessions[row.id]) {
@@ -476,7 +460,6 @@
                 sessions[row.id][row.process] = row.status;
             });
 
-            // Count total runs and fully successful runs
             const totalRuns = Object.keys(sessions).length;
             let fullySuccessfulRuns = 0;
 
@@ -492,7 +475,6 @@
                 }
             });
             
-            // Initialize process steps - all get the same 'normal' type now
             processOrder.forEach((step, index) => {
                 const displayName = step.charAt(0).toUpperCase() + 
                     step.slice(1).replace(/([A-Z])/g, ' $1');
@@ -503,12 +485,11 @@
                     successCount: 0,
                     failureCount: 0,
                     x: 300,
-                    y: 200 + (index * 130), // Moved down to make room for start element
-                    type: 'normal' // All process steps get same color
+                    y: 200 + (index * 130),
+                    type: 'normal'
                 };
             });
 
-            // Count successes and failures by session
             Object.values(sessions).forEach(session => {
                 processOrder.forEach(step => {
                     if (session[step]) {
@@ -521,10 +502,8 @@
                 });
             });
 
-            // Create array with start element, main steps, failure nodes, and success element
             const allSteps = [];
             
-            // Add start element
             allSteps.push({
                 id: 'start',
                 title: 'Process Start',
@@ -535,7 +514,6 @@
                 type: 'start'
             });
 
-            // Add main process steps and their failure nodes
             processOrder.forEach(step => {
                 allSteps.push(processSteps[step]);
                 if (processSteps[step].failureCount > 0) {
@@ -551,7 +529,6 @@
                 }
             });
 
-            // Add success element at the end
             const lastY = processOrder.length > 0 ? 200 + ((processOrder.length - 1) * 130) + 130 : 330;
             allSteps.push({
                 id: 'success',
@@ -568,7 +545,6 @@
 
         function renderDiagram() {
             const canvas = document.getElementById('canvas');
-            // Clear previous content but keep defs
             const defs = canvas.querySelector('defs');
             canvas.innerHTML = '';
             canvas.appendChild(defs);
@@ -585,42 +561,33 @@
         function createConnections() {
             const canvas = document.getElementById('canvas');
             
-            // Get main process steps (excluding failure nodes, start, and success)
             const mainSteps = processData.filter(n => 
                 !n.id.includes('-failed') && n.id !== 'start' && n.id !== 'success'
             );
             const startNode = processData.find(n => n.id === 'start');
             const successNode = processData.find(n => n.id === 'success');
             
-            // Connection from start to first main step
             if (startNode && mainSteps.length > 0) {
                 createConnectionLine(startNode, mainSteps[0], 'success');
             }
             
-            // Main flow connections between process steps
             for (let i = 0; i < mainSteps.length - 1; i++) {
                 createConnectionLine(mainSteps[i], mainSteps[i + 1], 'success');
             }
             
-            // Connection from last main step to success
             if (mainSteps.length > 0 && successNode) {
                 createConnectionLine(mainSteps[mainSteps.length - 1], successNode, 'success');
             }
 
-            // Failure and continuation connections
             mainSteps.forEach((step, index) => {
                 const failNode = processData.find(n => n.id === step.id + '-failed');
                 
                 if (failNode) {
-                    // Connection to failure
                     createConnectionLine(step, failNode, 'failure');
                     
-                    // Continuation to next step if it exists (but not from last step to success)
                     if (index < mainSteps.length - 1) {
                         createConnectionLine(failNode, mainSteps[index + 1], 'continuation', failNode.failureCount);
                     }
-                    // Note: No continuation from last failed step to success node
-                    // because success node is only for fully successful runs
                 }
             });
         }
@@ -631,18 +598,16 @@
             
             let pathData;
             if (type === 'failure') {
-                pathData = `M ${fromNode.x + 44} ${fromNode.y} L ${toNode.x - 44} ${toNode.y}`;
+                pathData = 'M ' + (fromNode.x + 40) + ' ' + fromNode.y + ' L ' + (toNode.x - 40) + ' ' + toNode.y;
             } else if (type === 'continuation') {
                 const midX = (fromNode.x + toNode.x) / 2;
-                const curveY = fromNode.y + 40;
-                pathData = `M ${fromNode.x} ${fromNode.y + 45} Q ${midX} ${curveY} ${toNode.x - 45} ${toNode.y}`;
+                const curveY = fromNode.y + 50;
+                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' Q ' + midX + ' ' + curveY + ' ' + (toNode.x - 40) + ' ' + toNode.y;
                 
-                // Add count label for continuation lines
                 if (count && count > 0) {
                     const labelX = midX;
                     const labelY = curveY;
                     
-                    // Apple-style background pill
                     const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                     labelBg.setAttribute('x', labelX - 16);
                     labelBg.setAttribute('y', labelY - 8);
@@ -651,7 +616,7 @@
                     labelBg.setAttribute('rx', '8');
                     labelBg.setAttribute('ry', '8');
                     labelBg.setAttribute('fill', '#ffffff');
-                    labelBg.setAttribute('stroke', '#FF9500');
+                    labelBg.setAttribute('stroke', '#d4935a');
                     labelBg.setAttribute('stroke-width', '1');
                     
                     const countLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -660,18 +625,18 @@
                     countLabel.setAttribute('text-anchor', 'middle');
                     countLabel.setAttribute('font-size', '11');
                     countLabel.setAttribute('font-weight', '600');
-                    countLabel.setAttribute('fill', '#FF9500');
+                    countLabel.setAttribute('fill', '#d4935a');
                     countLabel.textContent = count.toString();
                     
                     canvas.appendChild(labelBg);
                     canvas.appendChild(countLabel);
                 }
             } else {
-                pathData = `M ${fromNode.x} ${fromNode.y + 45} L ${toNode.x} ${toNode.y - 45}`;
+                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' L ' + toNode.x + ' ' + (toNode.y - 40);
             }
             
             path.setAttribute('d', pathData);
-            path.setAttribute('class', `connection-line ${type}`);
+            path.setAttribute('class', 'connection-line ' + type);
             canvas.appendChild(path);
         }
 
@@ -680,30 +645,32 @@
             
             const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             nodeGroup.setAttribute('class', 'process-node-group');
-            nodeGroup.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+            nodeGroup.setAttribute('transform', 'translate(' + node.x + ',' + node.y + ')');
             nodeGroup.setAttribute('filter', 'url(#subtleShadow)');
             
-            // Create the main circle with Apple's clean aesthetic
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', '0');
-            circle.setAttribute('cy', '0');
-            circle.setAttribute('r', '44');
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', '-40');
+            rect.setAttribute('y', '-40');
+            rect.setAttribute('width', '80');
+            rect.setAttribute('height', '80');
+            rect.setAttribute('rx', '12');
+            rect.setAttribute('ry', '12');
             
             let fillColor, strokeColor, strokeWidth = 0.5;
             
             switch(node.type) {
                 case 'start':
-                    fillColor = '#007AFF';
+                    fillColor = '#4a6b7c';
                     strokeColor = 'none';
                     strokeWidth = 0;
                     break;
                 case 'failure':
-                    fillColor = '#FF3B30';
+                    fillColor = '#b85a73';
                     strokeColor = 'none';
                     strokeWidth = 0;
                     break;
                 case 'end':
-                    fillColor = '#34C759';
+                    fillColor = '#7a9b7f';
                     strokeColor = 'none';
                     strokeWidth = 0;
                     break;
@@ -714,76 +681,80 @@
                     break;
             }
             
-            circle.setAttribute('fill', fillColor);
+            rect.setAttribute('fill', fillColor);
             if (strokeWidth > 0) {
-                circle.setAttribute('stroke', strokeColor);
-                circle.setAttribute('stroke-width', strokeWidth);
+                rect.setAttribute('stroke', strokeColor);
+                rect.setAttribute('stroke-width', strokeWidth);
             }
             
-            // Title text with Apple typography
             const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             title.setAttribute('x', '0');
-            title.setAttribute('y', '-6');
+            title.setAttribute('y', '-8');
             title.setAttribute('text-anchor', 'middle');
-            title.setAttribute('font-size', '12');
+            title.setAttribute('font-size', '10');
             title.setAttribute('font-weight', '500');
             title.setAttribute('letter-spacing', '-0.01em');
             
             const isColoredNode = node.type !== 'normal';
             title.setAttribute('fill', isColoredNode ? 'white' : '#1d1d1f');
             
-            // Handle multi-line titles cleanly
             const words = node.title.split(' ');
-            if (words.length > 2) {
-                title.setAttribute('y', '-14');
-                title.textContent = words.slice(0, 2).join(' ');
+            if (words.length > 2 || node.title.length > 12) {
+                const midpoint = Math.ceil(words.length / 2);
+                const line1 = words.slice(0, midpoint).join(' ');
+                const line2 = words.slice(midpoint).join(' ');
                 
-                const title2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                title2.setAttribute('x', '0');
-                title2.setAttribute('y', '-2');
-                title2.setAttribute('text-anchor', 'middle');
-                title2.setAttribute('font-size', '12');
-                title2.setAttribute('font-weight', '500');
-                title2.setAttribute('letter-spacing', '-0.01em');
-                title2.setAttribute('fill', isColoredNode ? 'white' : '#1d1d1f');
-                title2.textContent = words.slice(2).join(' ');
-                nodeGroup.appendChild(title2);
+                title.setAttribute('y', '-18');
+                title.textContent = line1;
+                
+                if (line2) {
+                    const title2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    title2.setAttribute('x', '0');
+                    title2.setAttribute('y', '-6');
+                    title2.setAttribute('text-anchor', 'middle');
+                    title2.setAttribute('font-size', '10');
+                    title2.setAttribute('font-weight', '500');
+                    title2.setAttribute('letter-spacing', '-0.01em');
+                    title2.setAttribute('fill', isColoredNode ? 'white' : '#1d1d1f');
+                    title2.textContent = line2;
+                    nodeGroup.appendChild(title2);
+                }
             } else {
                 title.textContent = node.title;
             }
             
-            // Count display with refined typography
             const count = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             count.setAttribute('x', '0');
-            count.setAttribute('y', '12');
+            count.setAttribute('y', '20');
             count.setAttribute('text-anchor', 'middle');
-            count.setAttribute('font-size', '13');
+            count.setAttribute('font-size', '12');
             count.setAttribute('font-weight', '600');
             count.setAttribute('fill', isColoredNode ? 'white' : '#86868b');
             
             if (node.type === 'failure') {
                 count.textContent = node.failureCount.toString();
             } else if (node.failureCount > 0 && node.type === 'normal') {
-                count.textContent = `${node.successCount}/${node.successCount + node.failureCount}`;
+                count.textContent = node.successCount.toString() + '/' + (node.successCount + node.failureCount).toString();
             } else {
                 count.textContent = node.successCount.toString();
             }
             
-            // Add subtle hover interaction
             nodeGroup.addEventListener('mouseenter', function() {
-                circle.style.transform = 'scale(1.05)';
-                circle.style.transition = 'transform 0.2s ease';
+                rect.style.transform = 'scale(1.05)';
+                rect.style.transition = 'transform 0.2s ease';
             });
             
             nodeGroup.addEventListener('mouseleave', function() {
-                circle.style.transform = 'scale(1)';
+                rect.style.transform = 'scale(1)';
             });
             
-            nodeGroup.appendChild(circle);
+            nodeGroup.appendChild(rect);
             nodeGroup.appendChild(title);
             nodeGroup.appendChild(count);
             
-            nodeGroup.addEventListener('mouseenter', (e) => showTooltip(e, node));
+            nodeGroup.addEventListener('mouseenter', function(e) { 
+                showTooltip(e, node); 
+            });
             nodeGroup.addEventListener('mouseleave', hideTooltip);
             
             canvas.appendChild(nodeGroup);
@@ -795,13 +766,13 @@
             tooltip.style.left = e.pageX + 10 + 'px';
             tooltip.style.top = e.pageY - 10 + 'px';
             
-            let content = `<strong>${node.title}</strong><br>`;
-            content += `Success: ${node.successCount}<br>`;
+            let content = '<strong>' + node.title + '</strong><br>';
+            content += 'Success: ' + node.successCount + '<br>';
             if (node.failureCount > 0) {
-                content += `Failures: ${node.failureCount}<br>`;
+                content += 'Failures: ' + node.failureCount + '<br>';
                 const total = node.successCount + node.failureCount;
                 const rate = ((node.successCount / total) * 100).toFixed(1);
-                content += `Success Rate: ${rate}%`;
+                content += 'Success Rate: ' + rate + '%';
             }
             
             tooltip.innerHTML = content;
