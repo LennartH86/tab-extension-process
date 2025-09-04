@@ -306,7 +306,9 @@
                 console.log('Saved worksheet name:', worksheetName);
                 
                 if (worksheetName) {
-                    selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
+                    selectedWorksheet = dashboard.worksheets.find(function(ws) {
+                        return ws.name === worksheetName;
+                    });
                     if (selectedWorksheet) {
                         console.log('Found worksheet, loading data...');
                         loadProcessData();
@@ -346,19 +348,21 @@
             tableau.extensions.ui.displayDialogAsync(popupUrl, JSON.stringify(currentSettings), { 
                 height: 600, 
                 width: 500 
-            }).then((closePayload) => {
+            }).then(function(closePayload) {
                 console.log('Dialog closed with payload:', closePayload);
                 if (closePayload && closePayload !== 'cancelled') {
-                    tableau.extensions.settings.saveAsync().then(() => {
+                    tableau.extensions.settings.saveAsync().then(function() {
                         console.log('Settings saved, reloading data...');
                         const worksheetName = tableau.extensions.settings.get('selectedWorksheet');
-                        selectedWorksheet = dashboard.worksheets.find(ws => ws.name === worksheetName);
+                        selectedWorksheet = dashboard.worksheets.find(function(ws) {
+                            return ws.name === worksheetName;
+                        });
                         if (selectedWorksheet) {
                             loadProcessData();
                         }
                     });
                 }
-            }).catch((error) => {
+            }).catch(function(error) {
                 console.error('Configuration dialog error:', error);
                 showError('Error opening configuration dialog: ' + error.toString());
             });
@@ -402,31 +406,31 @@
             const processColName = tableau.extensions.settings.get('processColumn');
             const statusColName = tableau.extensions.settings.get('statusColumn');
 
-            const timestampCol = columns.find(col => 
-                col.fieldName === timestampColName || 
-                col.fieldName.toLowerCase().includes('timestamp') ||
-                col.fieldName.toLowerCase().includes('time')
-            );
-            const idCol = columns.find(col => 
-                col.fieldName === idColName || 
-                col.fieldName.toLowerCase().includes('id')
-            );
-            const processCol = columns.find(col => 
-                col.fieldName === processColName || 
-                col.fieldName.toLowerCase().includes('process') ||
-                col.fieldName.toLowerCase().includes('step')
-            );
-            const statusCol = columns.find(col => 
-                col.fieldName === statusColName || 
-                col.fieldName.toLowerCase().includes('status')
-            );
+            const timestampCol = columns.find(function(col) {
+                return col.fieldName === timestampColName || 
+                       col.fieldName.toLowerCase().includes('timestamp') ||
+                       col.fieldName.toLowerCase().includes('time');
+            });
+            const idCol = columns.find(function(col) {
+                return col.fieldName === idColName || 
+                       col.fieldName.toLowerCase().includes('id');
+            });
+            const processCol = columns.find(function(col) {
+                return col.fieldName === processColName || 
+                       col.fieldName.toLowerCase().includes('process') ||
+                       col.fieldName.toLowerCase().includes('step');
+            });
+            const statusCol = columns.find(function(col) {
+                return col.fieldName === statusColName || 
+                       col.fieldName.toLowerCase().includes('status');
+            });
 
             if (!timestampCol || !idCol || !processCol) {
                 showError('Required columns not found. Please configure the extension with the correct column names.');
                 return;
             }
 
-            dataTable.data.forEach(row => {
+            dataTable.data.forEach(function(row) {
                 const rowData = {
                     timestamp: row[timestampCol.index].value,
                     id: row[idCol.index].value,
@@ -443,7 +447,7 @@
             const processOrder = [];
             const seenProcesses = new Set();
             
-            data.forEach(row => {
+            data.forEach(function(row) {
                 if (!seenProcesses.has(row.process)) {
                     processOrder.push(row.process);
                     seenProcesses.add(row.process);
@@ -453,7 +457,7 @@
             const processSteps = {};
             
             const sessions = {};
-            data.forEach(row => {
+            data.forEach(function(row) {
                 if (!sessions[row.id]) {
                     sessions[row.id] = {};
                 }
@@ -463,9 +467,9 @@
             const totalRuns = Object.keys(sessions).length;
             let fullySuccessfulRuns = 0;
 
-            Object.values(sessions).forEach(session => {
+            Object.values(sessions).forEach(function(session) {
                 let hasAnyFailure = false;
-                processOrder.forEach(step => {
+                processOrder.forEach(function(step) {
                     if (session[step] && (session[step] === 'failed' || session[step] === 'failure')) {
                         hasAnyFailure = true;
                     }
@@ -475,7 +479,7 @@
                 }
             });
             
-            processOrder.forEach((step, index) => {
+            processOrder.forEach(function(step, index) {
                 const displayName = step.charAt(0).toUpperCase() + 
                     step.slice(1).replace(/([A-Z])/g, ' $1');
                 
@@ -490,8 +494,8 @@
                 };
             });
 
-            Object.values(sessions).forEach(session => {
-                processOrder.forEach(step => {
+            Object.values(sessions).forEach(function(session) {
+                processOrder.forEach(function(step) {
                     if (session[step]) {
                         if (session[step] === 'failed' || session[step] === 'failure') {
                             processSteps[step].failureCount++;
@@ -514,7 +518,7 @@
                 type: 'start'
             });
 
-            processOrder.forEach(step => {
+            processOrder.forEach(function(step) {
                 allSteps.push(processSteps[step]);
                 if (processSteps[step].failureCount > 0) {
                     allSteps.push({
@@ -551,7 +555,7 @@
             
             createConnections();
             
-            processData.forEach(node => {
+            processData.forEach(function(node) {
                 createProcessNode(node);
             });
 
@@ -561,11 +565,15 @@
         function createConnections() {
             const canvas = document.getElementById('canvas');
             
-            const mainSteps = processData.filter(n => 
-                !n.id.includes('-failed') && n.id !== 'start' && n.id !== 'success'
-            );
-            const startNode = processData.find(n => n.id === 'start');
-            const successNode = processData.find(n => n.id === 'success');
+            const mainSteps = processData.filter(function(n) {
+                return !n.id.includes('-failed') && n.id !== 'start' && n.id !== 'success';
+            });
+            const startNode = processData.find(function(n) {
+                return n.id === 'start';
+            });
+            const successNode = processData.find(function(n) {
+                return n.id === 'success';
+            });
             
             if (startNode && mainSteps.length > 0) {
                 createConnectionLine(startNode, mainSteps[0], 'success');
@@ -579,8 +587,10 @@
                 createConnectionLine(mainSteps[mainSteps.length - 1], successNode, 'success');
             }
 
-            mainSteps.forEach((step, index) => {
-                const failNode = processData.find(n => n.id === step.id + '-failed');
+            mainSteps.forEach(function(step, index) {
+                const failNode = processData.find(function(n) {
+                    return n.id === step.id + '-failed';
+                });
                 
                 if (failNode) {
                     createConnectionLine(step, failNode, 'failure');
@@ -592,17 +602,17 @@
             });
         }
 
-        function createConnectionLine(fromNode, toNode, type, count = null) {
+        function createConnectionLine(fromNode, toNode, type, count) {
             const canvas = document.getElementById('canvas');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             
             let pathData;
             if (type === 'failure') {
-                pathData = 'M ' + (fromNode.x + 40) + ' ' + fromNode.y + ' L ' + (toNode.x - 40) + ' ' + toNode.y;
+                pathData = 'M ' + (fromNode.x + 60) + ' ' + fromNode.y + ' L ' + (toNode.x - 60) + ' ' + toNode.y;
             } else if (type === 'continuation') {
                 const midX = (fromNode.x + toNode.x) / 2;
                 const curveY = fromNode.y + 50;
-                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' Q ' + midX + ' ' + curveY + ' ' + (toNode.x - 40) + ' ' + toNode.y;
+                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' Q ' + midX + ' ' + curveY + ' ' + (toNode.x - 60) + ' ' + toNode.y;
                 
                 if (count && count > 0) {
                     const labelX = midX;
@@ -649,9 +659,9 @@
             nodeGroup.setAttribute('filter', 'url(#subtleShadow)');
             
             const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.setAttribute('x', '-40');
+            rect.setAttribute('x', '-60');
             rect.setAttribute('y', '-40');
-            rect.setAttribute('width', '80');
+            rect.setAttribute('width', '120');
             rect.setAttribute('height', '80');
             rect.setAttribute('rx', '12');
             rect.setAttribute('ry', '12');
@@ -694,9 +704,7 @@
             title.setAttribute('font-size', '10');
             title.setAttribute('font-weight', '500');
             title.setAttribute('letter-spacing', '-0.01em');
-            
-            const isColoredNode = node.type !== 'normal';
-            title.setAttribute('fill', isColoredNode ? 'white' : '#1d1d1f');
+            title.setAttribute('fill', '#1d1d1f');
             
             const words = node.title.split(' ');
             if (words.length > 2 || node.title.length > 12) {
@@ -715,7 +723,7 @@
                     title2.setAttribute('font-size', '10');
                     title2.setAttribute('font-weight', '500');
                     title2.setAttribute('letter-spacing', '-0.01em');
-                    title2.setAttribute('fill', isColoredNode ? 'white' : '#1d1d1f');
+                    title2.setAttribute('fill', '#1d1d1f');
                     title2.textContent = line2;
                     nodeGroup.appendChild(title2);
                 }
@@ -729,7 +737,7 @@
             count.setAttribute('text-anchor', 'middle');
             count.setAttribute('font-size', '12');
             count.setAttribute('font-weight', '600');
-            count.setAttribute('fill', isColoredNode ? 'white' : '#86868b');
+            count.setAttribute('fill', '#1d1d1f');
             
             if (node.type === 'failure') {
                 count.textContent = node.failureCount.toString();
@@ -752,8 +760,8 @@
             nodeGroup.appendChild(title);
             nodeGroup.appendChild(count);
             
-            nodeGroup.addEventListener('mouseenter', function(e) { 
-                showTooltip(e, node); 
+            nodeGroup.addEventListener('mouseenter', function(e) {
+                 showTooltip(e, node); 
             });
             nodeGroup.addEventListener('mouseleave', hideTooltip);
             
@@ -763,8 +771,8 @@
         function showTooltip(e, node) {
             const tooltip = document.getElementById('tooltip');
             tooltip.style.display = 'block';
-            tooltip.style.left = e.pageX + 10 + 'px';
-            tooltip.style.top = e.pageY - 10 + 'px';
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY - 10) + 'px';
             
             let content = '<strong>' + node.title + '</strong><br>';
             content += 'Success: ' + node.successCount + '<br>';
@@ -794,7 +802,7 @@
         function startPan(e) {
             if (e.target.closest('.process-node-group')) return;
             isPanning = true;
-                        panStart = { x: e.clientX, y: e.clientY };
+            panStart = { x: e.clientX, y: e.clientY };
         }
 
         function pan(e) {
@@ -847,7 +855,7 @@
 
         function updateTransform() {
             const canvas = document.getElementById('canvas');
-            const viewBox = `${-panOffset.x / currentZoom} ${-panOffset.y / currentZoom} ${1000 / currentZoom} ${800 / currentZoom}`;
+            const viewBox = (-panOffset.x / currentZoom) + ' ' + (-panOffset.y / currentZoom) + ' ' + (1000 / currentZoom) + ' ' + (800 / currentZoom);
             canvas.setAttribute('viewBox', viewBox);
         }
 
@@ -871,9 +879,10 @@
             
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error';
-            errorDiv.innerHTML = `<strong>Error:</strong><br>${message}`;
+            errorDiv.innerHTML = '<strong>Error:</strong><br>' + message;
             document.querySelector('.container').appendChild(errorDiv);
         }
     </script>
 </body>
-</html>
+</html> 
+               
