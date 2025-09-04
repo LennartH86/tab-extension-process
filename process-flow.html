@@ -697,39 +697,50 @@
                 rect.setAttribute('stroke-width', strokeWidth);
             }
             
+            // --- CHANGE STARTS HERE: Refactored text creation logic ---
+
             const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            const isColoredNode = node.type === 'start' || node.type === 'end';
+            const textColor = isColoredNode ? 'white' : '#1d1d1f';
+
             title.setAttribute('x', '0');
-            title.setAttribute('y', '-8');
             title.setAttribute('text-anchor', 'middle');
             title.setAttribute('font-size', '10');
             title.setAttribute('font-weight', '500');
             title.setAttribute('letter-spacing', '-0.01em');
-            title.setAttribute('fill', '#1d1d1f');
-            
+            title.setAttribute('fill', textColor);
+
             const words = node.title.split(' ');
+            let lines = [];
+
+            // Determine if the title should be split into two lines
             if (words.length > 2 || node.title.length > 12) {
                 const midpoint = Math.ceil(words.length / 2);
-                const line1 = words.slice(0, midpoint).join(' ');
-                const line2 = words.slice(midpoint).join(' ');
-                
-                title.setAttribute('y', '-18');
-                title.textContent = line1;
-                
-                if (line2) {
-                    const title2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    title2.setAttribute('x', '0');
-                    title2.setAttribute('y', '-6');
-                    title2.setAttribute('text-anchor', 'middle');
-                    title2.setAttribute('font-size', '10');
-                    title2.setAttribute('font-weight', '500');
-                    title2.setAttribute('letter-spacing', '-0.01em');
-                    title2.setAttribute('fill', '#1d1d1f');
-                    title2.textContent = line2;
-                    nodeGroup.appendChild(title2);
-                }
+                lines.push(words.slice(0, midpoint).join(' '));
+                lines.push(words.slice(midpoint).join(' '));
             } else {
-                title.textContent = node.title;
+                lines.push(node.title);
             }
+
+            // Calculate the starting Y position to vertically center the text block
+            const lineHeight = 12; // Estimated height of a line of text
+            const totalTextHeight = lines.length * lineHeight;
+            const startY = -8 - (totalTextHeight / 2) + (lineHeight / 2);
+            title.setAttribute('y', startY);
+
+            // Create <tspan> elements for each line
+            lines.forEach(function(line, index) {
+                if (!line) return; // Skip empty lines
+                const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                tspan.setAttribute('x', '0');
+                if (index > 0) {
+                    tspan.setAttribute('dy', lineHeight + 'px'); // 'dy' moves relative to the previous tspan
+                }
+                tspan.textContent = line;
+                title.appendChild(tspan);
+            });
+
+            // --- CHANGE ENDS HERE ---
             
             const count = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             count.setAttribute('x', '0');
@@ -737,7 +748,7 @@
             count.setAttribute('text-anchor', 'middle');
             count.setAttribute('font-size', '12');
             count.setAttribute('font-weight', '600');
-            count.setAttribute('fill', '#1d1d1f');
+            count.setAttribute('fill', textColor);
             
             if (node.type === 'failure') {
                 count.textContent = node.failureCount.toString();
