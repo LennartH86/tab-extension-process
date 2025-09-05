@@ -479,6 +479,11 @@
                 }
             });
             
+            // --- HORIZONTAL LAYOUT CHANGE: Define horizontal spacing ---
+            const horizontalGap = 180;
+            const mainPathY = 300;
+            const failurePathY = 450;
+            
             processOrder.forEach(function(step, index) {
                 const displayName = step.charAt(0).toUpperCase() + 
                     step.slice(1).replace(/([A-Z])/g, ' $1');
@@ -488,8 +493,9 @@
                     title: displayName,
                     successCount: 0,
                     failureCount: 0,
-                    x: 300,
-                    y: 200 + (index * 130),
+                    // --- HORIZONTAL LAYOUT CHANGE: X is now dynamic, Y is constant ---
+                    x: 150 + ((index + 1) * horizontalGap),
+                    y: mainPathY,
                     type: 'normal'
                 };
             });
@@ -513,8 +519,9 @@
                 title: 'Process Start',
                 successCount: totalRuns,
                 failureCount: 0,
-                x: 300,
-                y: 70,
+                // --- HORIZONTAL LAYOUT CHANGE: Position start node on the left ---
+                x: 150,
+                y: mainPathY,
                 type: 'start'
             });
 
@@ -526,21 +533,23 @@
                         title: processSteps[step].title + ' Failed',
                         successCount: 0,
                         failureCount: processSteps[step].failureCount,
-                        x: 550,
-                        y: processSteps[step].y,
+                        // --- HORIZONTAL LAYOUT CHANGE: Failure node is below the main node ---
+                        x: processSteps[step].x,
+                        y: failurePathY,
                         type: 'failure'
                     });
                 }
             });
 
-            const lastY = processOrder.length > 0 ? 200 + ((processOrder.length - 1) * 130) + 130 : 330;
+            // --- HORIZONTAL LAYOUT CHANGE: Calculate position for the end node ---
+            const lastX = processOrder.length > 0 ? 150 + (processOrder.length * horizontalGap) + horizontalGap : 330;
             allSteps.push({
                 id: 'success',
                 title: 'Process Success',
                 successCount: fullySuccessfulRuns,
                 failureCount: 0,
-                x: 300,
-                y: lastY,
+                x: lastX,
+                y: mainPathY,
                 type: 'end'
             });
 
@@ -608,15 +617,18 @@
             
             let pathData;
             if (type === 'failure') {
-                pathData = 'M ' + (fromNode.x + 60) + ' ' + fromNode.y + ' L ' + (toNode.x - 60) + ' ' + toNode.y;
+                // --- HORIZONTAL LAYOUT CHANGE: Path goes from bottom of main node to top of failure node ---
+                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' L ' + toNode.x + ' ' + (toNode.y - 40);
             } else if (type === 'continuation') {
-                const midX = (fromNode.x + toNode.x) / 2;
-                const curveY = fromNode.y + 50;
-                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' Q ' + midX + ' ' + curveY + ' ' + (toNode.x - 60) + ' ' + toNode.y;
+                // --- HORIZONTAL LAYOUT CHANGE: Curve from failure node back up to the next main node ---
+                const midY = (fromNode.y + toNode.y) / 2;
+                const curveX = fromNode.x + 90; // Control point for the curve
+                pathData = 'M ' + (fromNode.x + 60) + ' ' + fromNode.y + ' Q ' + curveX + ' ' + midY + ' ' + (toNode.x - 60) + ' ' + toNode.y;
                 
                 if (count && count > 0) {
-                    const labelX = midX;
-                    const labelY = curveY;
+                    // --- HORIZONTAL LAYOUT CHANGE: Update label position for the new curve ---
+                    const labelX = curveX;
+                    const labelY = midY;
                     
                     const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                     labelBg.setAttribute('x', labelX - 16);
@@ -641,8 +653,9 @@
                     canvas.appendChild(labelBg);
                     canvas.appendChild(countLabel);
                 }
-            } else {
-                pathData = 'M ' + fromNode.x + ' ' + (fromNode.y + 40) + ' L ' + toNode.x + ' ' + (toNode.y - 40);
+            } else { // This handles the 'success' type
+                // --- HORIZONTAL LAYOUT CHANGE: Path goes from right side of a node to the left side of the next ---
+                pathData = 'M ' + (fromNode.x + 60) + ' ' + fromNode.y + ' L ' + (toNode.x - 60) + ' ' + toNode.y;
             }
             
             path.setAttribute('d', pathData);
